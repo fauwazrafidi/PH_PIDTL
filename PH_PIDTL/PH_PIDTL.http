@@ -1,0 +1,6 @@
+@PH_PIDTL_HostAddress = http://localhost:5198
+
+GET {{PH_PIDTL_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

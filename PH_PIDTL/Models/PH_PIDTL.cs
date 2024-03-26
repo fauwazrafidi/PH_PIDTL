@@ -5,10 +5,7 @@ namespace Polynic.Models
 {
     public class PH_PIDTL
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Key]
-        public int Id { get; set; }
-
+        
         public string REMARK2 { get; set; }
         public string ITEMCODE { get; set; }
         public string DESCRIPTION { get; set; }
@@ -18,6 +15,7 @@ namespace Polynic.Models
         public decimal QTY { get; set; }
         public string UOM { get; set; }
 
+        
 
     }
 }

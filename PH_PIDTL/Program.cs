@@ -18,6 +18,7 @@ namespace Polynic
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseFirebird(builder.Configuration.GetConnectionString("FireBirdConnection")));
+
             
 
             var app = builder.Build();

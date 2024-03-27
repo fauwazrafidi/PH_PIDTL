@@ -47,7 +47,7 @@ namespace Polynic.Controllers
             }
 
             var item = await _context.PH_PIDTL
-                .Where(p => EF.Functions.Like(p.REMARK2, $"%{searchString}%"))
+                .Where(p => EF.Functions.Like(p.DTLKEY, $"%{searchString}%"))
                 .FirstOrDefaultAsync();
 
             if (item != null)

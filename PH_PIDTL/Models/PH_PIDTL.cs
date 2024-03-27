@@ -5,7 +5,8 @@ namespace Polynic.Models
 {
     public class PH_PIDTL
     {
-        
+
+        public string DTLKEY { get; set; }
         public string REMARK2 { get; set; }
         public string ITEMCODE { get; set; }
         public string DESCRIPTION { get; set; }

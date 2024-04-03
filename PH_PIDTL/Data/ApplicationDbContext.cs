@@ -14,7 +14,7 @@ namespace Polynic.Data
         {
             modelBuilder.Entity<PH_PIDTL>()
                 .ToTable("label_data")
-                .HasNoKey();
+                .HasKey(p => p.id);
 
         }
     }

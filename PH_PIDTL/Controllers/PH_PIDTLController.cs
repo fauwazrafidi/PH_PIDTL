@@ -42,14 +42,14 @@ namespace Polynic.Controllers
         [HttpGet("items/{searchString}")]
         public async Task<IActionResult> Get([FromQuery] int searchString)  // Use int as the parameter type
         {
-            if (searchString == 0) // Check for zero instead of empty
+            if (searchString == 0) 
             {
                 _logger.LogWarning("Search string is zero.");
                 return BadRequest("Search string cannot be zero.");
             }
 
             var item = await _context.PH_PIDTL
-                .Where(p => p.dtlkey == searchString)  // Use direct equality for integer comparison
+                .Where(p => p.id == searchString)  // Use direct equality for integer comparison
                 .FirstOrDefaultAsync();
 
             if (item != null)
@@ -90,7 +90,7 @@ namespace Polynic.Controllers
                 // Create a new worksheet
                 var worksheet = package.Workbook.Worksheets.Add("PH_PIDTL Data");
 
-                // Add header row
+                // Add header column
                 worksheet.Cells[1, 1].Value = "ID";
                 worksheet.Cells[2, 1].Value = "REMARK2";
                 worksheet.Cells[3, 1].Value = "ITEMCODE";
@@ -100,6 +100,7 @@ namespace Polynic.Controllers
                 worksheet.Cells[7, 1].Value = "LOCATION";
                 worksheet.Cells[8, 1].Value = "QTY";
                 worksheet.Cells[9, 1].Value = "UOM";
+                worksheet.Cells[10, 1].Value = "CheckOut";
 
                 // Add data rows
                 int column = 2;
@@ -114,6 +115,7 @@ namespace Polynic.Controllers
                     worksheet.Cells[7, column].Value = item.location;
                     worksheet.Cells[8, column].Value = item.qty;
                     worksheet.Cells[9, column].Value = item.uom;
+                    worksheet.Cells[10, column].Value = item.checkout;
                     //column++;
                 }
 
@@ -124,7 +126,7 @@ namespace Polynic.Controllers
                 
 
                 // Set content type and return the file
-                var fileName = $"ph_pidtl_{searchString}.xlsx";
+                var fileName = $"ph_pidtl_ID={searchString}.xlsx";
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 using (var memoryStream = new MemoryStream())
                 {
@@ -135,12 +137,32 @@ namespace Polynic.Controllers
             }
         }
 
+        [HttpGet("checkout/id/{id}")]
+        public async Task<IActionResult> GetById([FromRoute] int id)
+        {
+            var item = await _context.PH_PIDTL.FindAsync(id);
 
+            if (item == null)
+            {
+                return NotFound("Item with the specified ID not found.");
+            }
 
+            // Update checkout timestamp if item is found
+            item.checkout = DateTimeOffset.UtcNow; // Replace with your preferred way to get the current timestamp
 
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, "An error occurred while updating the checkout time.");
+            }
 
+            return Ok(item);
+        }
 
-
+        
 
     }
 }

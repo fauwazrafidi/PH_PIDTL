@@ -6,7 +6,6 @@ namespace Polynic.Models
     public class PH_PIDTL
     {
 
-        public int? dtlkey { get; set; }
         public string? remark2 { get; set; }
         public string? itemcode { get; set; }
         public string? description { get; set; }
@@ -16,8 +15,7 @@ namespace Polynic.Models
         public decimal qty { get; set; }
         public string? uom { get; set; }
         public int id { get; set; }
-
-
+        public DateTimeOffset checkout { get; set; }
 
     }
 }

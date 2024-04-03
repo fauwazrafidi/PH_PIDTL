@@ -13,7 +13,7 @@ namespace Polynic.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<PH_PIDTL>()
-                .ToTable("PH_PIDTL")
+                .ToTable("label_data")
                 .HasNoKey();
 
         }

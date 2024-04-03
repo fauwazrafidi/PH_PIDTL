@@ -6,17 +6,18 @@ namespace Polynic.Models
     public class PH_PIDTL
     {
 
-        public string DTLKEY { get; set; }
-        public string REMARK2 { get; set; }
-        public string ITEMCODE { get; set; }
-        public string DESCRIPTION { get; set; }
-        public string DESCRIPTION2 { get; set; }
-        public string BATCH { get; set; }
-        public string LOCATION { get; set; }
-        public decimal QTY { get; set; }
-        public string UOM { get; set; }
+        public int? dtlkey { get; set; }
+        public string? remark2 { get; set; }
+        public string? itemcode { get; set; }
+        public string? description { get; set; }
+        public string? description2 { get; set; }
+        public string? batch { get; set; }
+        public string? location { get; set; }
+        public decimal qty { get; set; }
+        public string? uom { get; set; }
+        public int id { get; set; }
 
-        
+
 
     }
 }

@@ -16,6 +16,7 @@ namespace Polynic.Models
         public string? uom { get; set; }
         public int id { get; set; }
         public DateTimeOffset checkout { get; set; }
+        public DateTimeOffset? checkin { get; set; }
 
     }
 }

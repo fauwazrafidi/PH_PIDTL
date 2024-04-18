@@ -101,16 +101,17 @@ namespace Polynic.Controllers
             }
 
             var items = await _context.PH_PIDTL
-                .Where(p => p.id == Id && p.checkin == null)
+                .Where(p => p.id == Id /*&& p.checkin == null*/)
                 .ToListAsync();
 
             if (items.Count == 0)
             {
                 _logger.LogWarning("No items found with the provided search criteria or item has already been checked in.");
-                return NotFound();
+                return NotFound("No items found with the provided search criteria or item has already been checked in.");
             }
 
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            // Generate Excel file content (logic remains the same)
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("PH_PIDTL Data");
@@ -132,19 +133,15 @@ namespace Polynic.Controllers
                 int column = 2;
                 foreach (var item in items)
                 {
-                    if (item != null)
-                    {
-                        item.checkin = DateTimeOffset.UtcNow.AddHours(8); // Replace with your preferred way to get the current timestamp
-                    }
 
                     worksheet.Cells[1, column].Value = item.id;
                     worksheet.Cells[2, column].Value = item.remark2;
                     worksheet.Cells[3, column].Value = item.itemcode;
-                    worksheet.Cells[4, column].Value = item .description;
+                    worksheet.Cells[4, column].Value = item.description;
                     worksheet.Cells[5, column].Value = item.description2;
                     worksheet.Cells[6, column].Value = item.batch;
                     worksheet.Cells[7, column].Value = item.location;
-                    worksheet.Cells[8, column].Value = item.qty;
+                    worksheet.Cells[8, column].Value = item.qtyremain + "/" + item.qty;
                     worksheet.Cells[9, column].Value = item.uom;
                     worksheet.Cells[10, column].Value = item.checkin;
                     worksheet.Cells[11, column].Value = item.checkout;
@@ -154,15 +151,6 @@ namespace Polynic.Controllers
                 worksheet.Column(1).AutoFit();
                 worksheet.Column(2).AutoFit();
                 worksheet.Column(2).Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
-
-                try
-                {
-                    await _context.SaveChangesAsync(); // Save changes to database
-                }
-                catch (DbUpdateException ex)
-                {
-                    return StatusCode(500, "An error occurred while updating the checkin time.");
-                }
 
                 // Set content type and return the file
                 var fileName = $"ph_pidtl_ID={Id}.xlsx";
@@ -174,10 +162,49 @@ namespace Polynic.Controllers
                     return File(memoryStream.ToArray(), contentType, fileName);
                 }
             }
+
+            
+        }
+
+        [HttpPut("item/{Id}/checkin")]
+        public async Task<IActionResult> CheckIn([FromRoute] int Id)
+        {
+            if (Id == 0)
+            {
+                _logger.LogWarning("Item ID cannot be zero.");
+                return BadRequest("Item ID cannot be zero.");
+            }
+
+            var item = await _context.PH_PIDTL.FindAsync(Id);
+
+            if (item == null)
+            {
+                _logger.LogWarning($"Item with ID {Id} not found.");
+                return NotFound($"Item with ID {Id} not found.");
+            }
+
+            if (item.checkin != null)
+            {
+                _logger.LogWarning($"Item with ID {Id} has already been checked in.");
+                return BadRequest("Item has already been checked in.");
+            }
+
+            item.checkin = DateTimeOffset.UtcNow.AddHours(8); // Update checkin time
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, "An error occurred while updating the checkin time.");
+            }
+
+            return Ok("Item checked in successfully.");
         }
 
         [HttpGet("checkout/id/{Id}")]
-        public async Task<IActionResult> GetById([FromQuery] int Id)
+        public async Task<IActionResult> GetById([FromQuery] int Id, [FromQuery] int checkoutQty) // Add checkoutQty parameter
         {
             // Find the item with the specified ID
             var item = await _context.PH_PIDTL.FindAsync(Id);
@@ -191,6 +218,13 @@ namespace Polynic.Controllers
             {
                 return BadRequest("Item with the specified ID does not have a check-in time.");
             }
+
+            // Validate checkout quantity against qtyremain
+            if (checkoutQty > item.qtyremain)
+            {
+                return BadRequest("Checkout quantity cannot exceed the remaining quantity. Available quantity: " + item.qtyremain);
+            }
+
             // Check if checkout is allowed based on earliest check-in
             var canCheckout = await CanCheckout(item.description, item.description2, item.checkin, Id);
 
@@ -199,8 +233,9 @@ namespace Polynic.Controllers
                 return BadRequest("Checkout not allowed for this item. Another of the same item has an earlier check-in.");
             }
 
-            // Update checkout timestamp if checkout is allowed
+            // Update checkout timestamp and ensure qtyremain stays above 0
             item.checkout = DateTimeOffset.UtcNow.AddHours(8);
+            item.qtyremain = Math.Max(item.qtyremain - checkoutQty, 0); // Set qtyremain to 0 if checkout would cause a negative value
 
             try
             {
@@ -208,12 +243,11 @@ namespace Polynic.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, "An error occurred while updating the checkout time.");
+                return StatusCode(500, "An error occurred while updating the checkout time and quantity.");
             }
 
             return Ok(item);
         }
-
 
         private async Task<bool> CanCheckout(string description, string description2, DateTimeOffset? checkin, int Id)
         {

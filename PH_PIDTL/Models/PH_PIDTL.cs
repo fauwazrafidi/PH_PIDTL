@@ -17,6 +17,7 @@ namespace Polynic.Models
         public int id { get; set; }
         public DateTimeOffset checkout { get; set; }
         public DateTimeOffset? checkin { get; set; }
+        public int qtyremain { get; set; }
 
     }
 }

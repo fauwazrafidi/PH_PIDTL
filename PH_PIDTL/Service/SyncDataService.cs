@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
-using Polynic.Models;
+
+using SHARED;
 
 namespace Polynic.Service
 {

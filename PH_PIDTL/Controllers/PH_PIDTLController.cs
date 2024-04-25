@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using Polynic.Data;
-using Polynic.Models;
+
 
 namespace Polynic.Controllers
 {
@@ -114,7 +114,7 @@ namespace Polynic.Controllers
             }
         }
 
-        [HttpPost("export/item/{Id}")]
+        [HttpGet("export/item/{Id}")]
         public async Task<IActionResult> Export([FromQuery] int Id, [FromQuery] int amount)
         {
             if (Id == 0)
@@ -205,7 +205,7 @@ namespace Polynic.Controllers
                 {
                     package.SaveAs(memoryStream);
                     memoryStream.Seek(0, SeekOrigin.Begin);
-                    return File(memoryStream.ToArray(), contentType, fileName);
+                    return File(memoryStream.ToArray(), contentType, fileName, true);
                 }
 
                
@@ -226,6 +226,7 @@ namespace Polynic.Controllers
             }
 
             var item = await _context.PH_PIDTL.FindAsync(Id);
+
 
             if (item == null)
             {

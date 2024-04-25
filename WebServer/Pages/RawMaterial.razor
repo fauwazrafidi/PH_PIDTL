@@ -50,9 +50,7 @@
                     <td>@item.checkout?.ToString("yyyy-MM-dd HH:mm")</td>
                     <td>@item.checkin?.ToString("yyyy-MM-dd HH:mm")</td>
                     <td>
-                        @* <button class="btn btn-primary" @onclick="(async () => { await ExportItem(item.id); })">Export</button> *@
-                        <p>@ex_medd</p>
-                        <button class="btn btn-primary" @onclick="@(()=>ExportItem())">Export</button>
+                        <button class="btn btn-primary" @onclick="(async () => { await ExportItem(item.id); })">Export</button>
                     </td>
                     @* <td>@item.qtyremain</td> *@
                 </tr>
@@ -61,7 +59,7 @@
     </tbody>
 </table>
 
-@* <script>
+<script>
     function downloadFile(byteArray, filename) { // Accept byte array directly
         var blob = new Blob([byteArray], { type: 'application/octet-stream' });
         var link = document.createElement('a');
@@ -69,14 +67,10 @@
         link.download = filename;
         link.click();
     }
-</script> *@
-
-
-@* <button class="btn btn-primary" @onclick="@(()=>ExportItem())">Export</button> *@
+</script>
 
 @code {
     private List<PH_PIDTL> _items;
-    private string ex_medd = "1111";
     protected override async Task OnInitializedAsync()
     {
         string apiUrl = "http://localhost:5198/api/PH_PIDTL/getItems?skip=0&take=50"; // Replace with your actual API URL
@@ -112,70 +106,37 @@
 
             }
         }
-        ex_medd = "222222";
-        Console.WriteLine(ex_medd);
     }
 
-    // private async Task ExportItem(int itemId)
-    // {
-    //     // Replace with your actual API endpoint for export
-    //     string exportUrl = $"https://localhost:5198/api/PH_PIDTL/export/item/{itemId}?Id={itemId}&amount=5";
-
-    //     // Make the export request (consider using POST for complex data)
-    //     await Http.GetAsync(exportUrl);
-
-    //     // Handle success or error based on the response
-    //     Console.WriteLine($"Export for item {itemId} initiated.");
 
 
-    // }
-
-    // private async Task ExportItem(int itemId)
-    // {
-    //     string exportUrl = $"https://localhost:5198/api/PH_PIDTL/export/item/{itemId}?Id={itemId}&amount=5";
-
-    //     HttpResponseMessage response = await Http.PostAsync(exportUrl, null);
-
-    //     if (response.IsSuccessStatusCode)
-    //     {
-    //         // Check for content type indicating a downloadable file
-    //         if (response.Content.Headers.ContentType.MediaType == "application/octet-stream")
-    //         {
-    //             // Read the content as byte array
-    //             byte[] fileBytes = await response.Content.ReadAsByteArrayAsync();
-
-    //             // Trigger download using Javascript (explained below)
-    //             await DownloadFile(fileBytes, "export.pdf"); // Change filename based on response or logic
-    //         }
-    //         else
-    //         {
-    //             // Handle success response (e.g., display success message)
-    //             Console.WriteLine($"Export for item {itemId} initiated.");
-    //         }
-    //     }
-    //     else
-    //     {
-    //         // Handle error based on response status code
-    //         Console.WriteLine($"Error exporting item {itemId}: {response.StatusCode}");
-    //     }
-    // }
-
-    private void  ExportItem()
+    private async Task ExportItem(int itemId)
     {
-        ex_medd = "hellll";
-        Console.WriteLine(ex_medd);
+        string exportUrl = $"http://localhost:5198/api/PH_PIDTL/export/item/{itemId}?Id={itemId}&amount=5";
+        Console.WriteLine(exportUrl);
 
-        // Replace with the actual base URL of the other project's Web API
-        //string baseUrl = "http://localhost:5198/api";
-        //string exportUrl = $"{baseUrl}/PH_PIDTL/export/item/48?Id=48&amount=5";
+        HttpResponseMessage response = await Http.GetAsync(exportUrl);
 
-        //HttpResponseMessage response = await Http.GetAsync(exportUrl);
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine(response.Content.Headers.ContentType.MediaType);
+            // Check for content type indicating a downloadable file
+                // Read the content as byte array
+                byte[] fileBytes = await response.Content.ReadAsByteArrayAsync();
 
-        // Handle success or error based on the response (optional)
-       // Console.WriteLine($"Export for item {itemId} initiated.");
+                // Trigger download using Javascript (explained below)
+                await DownloadFile(fileBytes, "export.xlsx"); // Change filename based on response or logi
+                // Handle success response (e.g., display success message)
+                Console.WriteLine($"Export for item {itemId} initiated.");
+        }
+        else
+        {
+            // Handle error based on response status code
+            Console.WriteLine($"Error exporting item {itemId}: {response.StatusCode}");
+        }
     }
 
-    private async Task DownloadFile(byte[] fileBytes, string filename)
+      private async Task DownloadFile(byte[] fileBytes, string filename)
     {
         await JSRuntime.InvokeAsync<object>("downloadFile", new object[] { fileBytes, filename });
     }

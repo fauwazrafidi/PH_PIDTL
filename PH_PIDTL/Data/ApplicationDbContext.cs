@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Polynic.Models;
+using SHARED;
+
 
 namespace Polynic.Data
 {

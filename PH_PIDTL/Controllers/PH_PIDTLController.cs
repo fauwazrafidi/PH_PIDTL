@@ -140,36 +140,44 @@ namespace Polynic.Controllers
                 var worksheet = package.Workbook.Worksheets.Add("PH_PIDTL Data");
 
                 // Add header column
-                worksheet.Cells[1, 1].Value = "ID";
-                worksheet.Cells[2, 1].Value = "Customer/Vendor";
-                worksheet.Cells[3, 1].Value = "Part No";
-                worksheet.Cells[4, 1].Value = "Part Name";
-                worksheet.Cells[5, 1].Value = "Colour";
-                worksheet.Cells[6, 1].Value = "Lot/Batch No";
-                worksheet.Cells[7, 1].Value = "Machine No. / Location";
-                worksheet.Cells[8, 1].Value = "Quantity // Unit";
-                //worksheet.Cells[9, 1].Value = "UOM";
-                worksheet.Cells[10, 1].Value = "CheckIn";
-                worksheet.Cells[11, 1].Value = "CheckOut";
+                worksheet.Cells[1, 1].Value = "Customer/Vendor";
+                worksheet.Cells[2, 1].Value = "Part No";
+                worksheet.Cells[3, 1].Value = "Part Name";
+                worksheet.Cells[4, 1].Value = "Colour";
+                worksheet.Cells[5, 1].Value = "Lot/Batch No";
+                worksheet.Cells[6, 1].Value = "Machine No. / Location";
+                worksheet.Cells[7, 1].Value = "Quantity // Unit";
+                worksheet.Cells[8, 1].Value = "Date Received";
+                worksheet.Cells[9, 1].Value = "CheckOut";
+
+                int column = 2;
+
+                worksheet.Cells[1, column].Value = ":";
+                worksheet.Cells[2, column].Value = ":";
+                worksheet.Cells[3, column].Value = ":";
+                worksheet.Cells[4, column].Value = ":";
+                worksheet.Cells[5, column].Value = ":";
+                worksheet.Cells[6, column].Value = ":";
+                worksheet.Cells[7, column].Value = ":";
+                worksheet.Cells[8, column].Value = ":";
+                worksheet.Cells[9, column].Value = ":";
+                
 
                 // Add data rows
-                int column = 2;
+                column = 3;
                 if(amount == 0)
                 {
                     foreach (var item in items)
                     {
-
-                        worksheet.Cells[1, column].Value = item.id;
-                        worksheet.Cells[2, column].Value = item.remark2;
-                        worksheet.Cells[3, column].Value = item.itemcode;
-                        worksheet.Cells[4, column].Value = item.description;
-                        worksheet.Cells[5, column].Value = item.description2;
-                        worksheet.Cells[6, column].Value = item.batch;
-                        worksheet.Cells[7, column].Value = item.location;
-                        worksheet.Cells[8, column].Value = item.qty + "/" + item.qty + item.uom;
-                        //worksheet.Cells[9, column].Value = item.uom;
-                        worksheet.Cells[10, column].Value = item.checkin;
-                        worksheet.Cells[11, column].Value = item.checkout;
+                        worksheet.Cells[1, column].Value = item.remark2;
+                        worksheet.Cells[2, column].Value = item.itemcode;
+                        worksheet.Cells[3, column].Value = item.description;
+                        worksheet.Cells[4, column].Value = item.description2;
+                        worksheet.Cells[5, column].Value = item.batch;
+                        worksheet.Cells[6, column].Value = item.location;
+                        worksheet.Cells[7, column].Value = item.qty + "/" + item.qty + item.uom;
+                        worksheet.Cells[8, column].Value = item.checkin;
+                        worksheet.Cells[9, column].Value = item.checkout;
                     }
                 }
                 else
@@ -177,17 +185,15 @@ namespace Polynic.Controllers
                     foreach (var item in items)
                     {
 
-                        worksheet.Cells[1, column].Value = item.id;
-                        worksheet.Cells[2, column].Value = item.remark2;
-                        worksheet.Cells[3, column].Value = item.itemcode;
-                        worksheet.Cells[4, column].Value = item.description;
-                        worksheet.Cells[5, column].Value = item.description2;
-                        worksheet.Cells[6, column].Value = item.batch;
-                        worksheet.Cells[7, column].Value = item.location;
-                        worksheet.Cells[8, column].Value = amount + "/" + item.qty + item.uom;
-                        //worksheet.Cells[9, column].Value = item.uom;
-                        worksheet.Cells[10, column].Value = item.checkin;
-                        worksheet.Cells[11, column].Value = item.checkout;
+                        worksheet.Cells[1, column].Value = item.remark2;
+                        worksheet.Cells[2, column].Value = item.itemcode;
+                        worksheet.Cells[3, column].Value = item.description;
+                        worksheet.Cells[4, column].Value = item.description2;
+                        worksheet.Cells[5, column].Value = item.batch;
+                        worksheet.Cells[6, column].Value = item.location;
+                        worksheet.Cells[7, column].Value = amount + "/" + item.qty + item.uom;
+                        worksheet.Cells[8, column].Value = item.checkin;
+                        worksheet.Cells[9, column].Value = item.checkout;
                     }
                 }
 
@@ -195,8 +201,9 @@ namespace Polynic.Controllers
 
                 // Fit columns
                 worksheet.Column(1).AutoFit();
-                worksheet.Column(2).AutoFit();
-                worksheet.Column(2).Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
+                worksheet.Column(2).Width = 1;
+                worksheet.Column(3).AutoFit();
+                worksheet.Column(3).Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
 
                 // Set content type and return the file
                 var fileName = $"ph_pidtl_ID={Id}.xlsx";

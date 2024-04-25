@@ -1,4 +1,4 @@
-﻿@page "/rawmaterial"
+﻿@page "/materialsearch"
 @using System.Net.Http
 @using Newtonsoft.Json
 @using System.Diagnostics
@@ -9,6 +9,10 @@
 @inject IJSRuntime JSRuntime
 
 <h1>Raw Material</h1>
+<div class="search-bar">
+    <input type="text" @bind-value="@searchText" placeholder="Search by Customer/Vendor">
+    <button @onclick="Search">Search</button>
+</div>
 
 <table class="table">
     <thead>
@@ -70,7 +74,12 @@
 </script>
 
 @code {
+
     private List<PH_PIDTL> _items;
+    private List<PH_PIDTL> _filteredItems = new List<PH_PIDTL>(); // Stores filtered items
+    private string searchText = "";
+
+
     protected override async Task OnInitializedAsync()
     {
         string apiUrl = "http://localhost:5198/api/PH_PIDTL/getItems?skip=0&take=50"; 
@@ -86,15 +95,6 @@
                 // Attempt deserialization using both methods
                 _items = JsonConvert.DeserializeObject<List<PH_PIDTL>>(jsonString);
 
-                // If deserialization as list fails, try for a single object (potential edge case)
-                if (_items == null)
-                {
-                    var item = JsonConvert.DeserializeObject<PH_PIDTL>(jsonString);
-                    if (item != null)
-                    {
-                        _items = new List<PH_PIDTL>() { item };
-                    }
-                }
             }
             catch (Exception ex)
             {
@@ -106,12 +106,61 @@
         }
     }
 
+    private async Task Search()
+    {
+        if (string.IsNullOrEmpty(searchText))
+        {
+            // No search term, show all items
+            
+            string apiUrl = "http://localhost:5198/api/PH_PIDTL/getItems?skip=0&take=50";
+            HttpResponseMessage response2 = await Http.GetAsync(apiUrl);
 
+            if (response2.IsSuccessStatusCode)
+            {
+                try
+                {
+                    // Read the content as a string
+                    string jsonString = await response2.Content.ReadAsStringAsync();
+
+                    // Attempt deserialization using both methods
+                    _items = JsonConvert.DeserializeObject<List<PH_PIDTL>>(jsonString);
+
+                }
+                catch (Exception ex)
+                {
+                    // Handle any errors
+                    Console.WriteLine($"Error loading Raw Models: {ex.Message}");
+
+
+                }
+            }
+        }
+
+        string searchUrl = $"http://localhost:5198/api/PH_PIDTL/items/{searchText}?Remark2={searchText}";
+        HttpResponseMessage response = await Http.GetAsync(searchUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                string jsonString = await response.Content.ReadAsStringAsync();
+                _items = JsonConvert.DeserializeObject<List<PH_PIDTL>>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error searching Raw Models: {ex.Message}");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Error searching Raw Models: {response.StatusCode}");
+        }
+    }
 
     private async Task ExportItem(int itemId)
     {
         string exportUrl = $"http://localhost:5198/api/PH_PIDTL/export/item/{itemId}?Id={itemId}&amount=5";
-
+        string checkinUrl = $"";
         Console.WriteLine(exportUrl);
 
         HttpResponseMessage response = await Http.GetAsync(exportUrl);

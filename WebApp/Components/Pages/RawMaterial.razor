@@ -1,0 +1,136 @@
+﻿@page "/rawmaterial"
+@using System.Net.Http
+@using Newtonsoft.Json
+@using Polynic.Models
+
+@inject HttpClient Http
+@inject IWebHostEnvironment Environment
+
+<h1>Raw Material</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            @* <th>Id</th> *@
+            <th>Part No</th>
+            <th>Part Name</th>
+            <th>Colour</th>
+            <th>Lot/Batch No</th>
+            <th>Machine No./Location</th>
+            <th>Quantity//Unit</th>
+            @* <th>Uom</th> *@
+            <th>Customer/Vendor</th>
+            <th>Checkout</th>
+            <th>Checkin</th>
+            <th></th>
+            @* <th>QtyRemain</th> *@
+        </tr>
+    </thead>
+    <tbody>
+        @if (_items == null)
+        {
+            <tr><td colspan="12">Loading...</td></tr>
+        }
+        else
+        {
+            @foreach (var item in _items)
+            {
+                <tr>
+                    @* <td>@item.id</td> *@
+                    <td>@item.itemcode</td>
+                    <td>@item.description</td>
+                    <td>@item.description2</td>
+                    <td>@item.batch</td>
+                    <td>@item.location</td>
+                    <td>@item.qty @item.uom</td>
+                    @* <td>@item.uom</td> *@
+                    <td>@item.remark2</td>
+                    <td>@item.checkout?.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@item.checkin?.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        @* <button class="btn btn-primary" @onclick="@(() => DownloadExport(item.id))">Export</button> *@
+                        <button class="btn btn-primary" @onclick="@(async () => { await ExportItem(item.id); })">Export</button>
+                    </td>
+                    @* <td>@item.qtyremain</td> *@
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<PH_PIDTL> _items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string apiUrl = "http://localhost:5198/api/PH_PIDTL/getItems?skip=0&take=50"; // Replace with your actual API URL
+        HttpResponseMessage response = await Http.GetAsync(apiUrl);
+
+        Console.WriteLine(response);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                // Read the content as a string
+                string jsonString = await response.Content.ReadAsStringAsync();
+
+                // Attempt deserialization using both methods
+                _items = JsonConvert.DeserializeObject<List<PH_PIDTL>>(jsonString);
+
+                // If deserialization as list fails, try for a single object (potential edge case)
+                if (_items == null)
+                {
+                    var item = JsonConvert.DeserializeObject<PH_PIDTL>(jsonString);
+                    if (item != null)
+                    {
+                        _items = new List<PH_PIDTL>() { item };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle any errors
+                Console.WriteLine($"Error loading Raw Models: {ex.Message}");
+            }
+        }
+    }
+
+    // private async Task ExportItem(int itemId)
+    // {
+    //     // Replace with your actual API endpoint for export
+    //     string exportUrl = $"https://localhost:5198/api/PH_PIDTL/export/item/{itemId}?Id={itemId}&amount=5";
+
+    //     // Make the export request (consider using POST for complex data)
+    //     await Http.GetAsync(exportUrl);
+
+    //     // Handle success or error based on the response
+    //     Console.WriteLine($"Export for item {itemId} initiated.");
+
+
+    // }
+
+    private async Task<IActionResult> ExportItem(int itemId)
+    {
+        // Replace with your actual API endpoint for export (should return the file)
+        string exportUrl = $"https://localhost:5198/api/PH_PIDTL/export/item/{itemId}?Id={itemId}&amount=5";
+
+        HttpResponseMessage response = await Http.GetAsync(exportUrl, HttpCompletionOption.ResponseHeadersRead);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Get file details (consider error handling)
+            string fileName = response.Content.Headers.ContentDisposition.FileName.ToString();
+            string contentType = response.Content.Headers.ContentType.ToString();
+            byte[] fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+            // Prepare file download response
+            return File(fileBytes, contentType, fileName);
+        }
+        else
+        {
+            // Handle export failure (return appropriate error)
+            return StatusCode(StatusCodes.InternalServerError, "Export failed");
+        }
+    }
+}

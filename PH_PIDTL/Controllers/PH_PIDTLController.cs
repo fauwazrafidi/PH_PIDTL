@@ -39,6 +39,29 @@ namespace Polynic.Controllers
 
         }
 
+        [HttpGet("getItems")]
+        public async Task<IActionResult> GetPaginatedItems([FromQuery] int skip = 0, [FromQuery] int take = 50)
+        {
+            var items = await _context.PH_PIDTL
+                .OrderBy(p => p.id)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            var totalItems = await _context.PH_PIDTL.CountAsync();
+
+            if (items.Any())
+            {
+                _logger.LogInformation($"Retrieved {items.Count} items from PH_PIDTL (skip: {skip}, take: {take}).");
+                return Ok(items);  // Return the list directly
+            }
+            else
+            {
+                _logger.LogWarning("No items found in PH_PIDTLs.");
+                return NotFound();
+            }
+        }
+
         [HttpGet("item/{Id}")]
         public async Task<IActionResult> Get([FromQuery] int Id)  // Use int as the parameter type
         {
@@ -91,8 +114,8 @@ namespace Polynic.Controllers
             }
         }
 
-        [HttpGet("export/item/{Id}")]
-        public async Task<IActionResult> Export([FromQuery] int Id)
+        [HttpPost("export/item/{Id}")]
+        public async Task<IActionResult> Export([FromQuery] int Id, [FromQuery] int amount)
         {
             if (Id == 0)
             {
@@ -101,7 +124,7 @@ namespace Polynic.Controllers
             }
 
             var items = await _context.PH_PIDTL
-                .Where(p => p.id == Id /*&& p.checkin == null*/)
+                .Where(p => p.id == Id)
                 .ToListAsync();
 
             if (items.Count == 0)
@@ -118,34 +141,57 @@ namespace Polynic.Controllers
 
                 // Add header column
                 worksheet.Cells[1, 1].Value = "ID";
-                worksheet.Cells[2, 1].Value = "REMARK2";
-                worksheet.Cells[3, 1].Value = "ITEMCODE";
-                worksheet.Cells[4, 1].Value = "DESCRIPTION";
-                worksheet.Cells[5, 1].Value = "DESCRIPTION2";
-                worksheet.Cells[6, 1].Value = "BATCH";
-                worksheet.Cells[7, 1].Value = "LOCATION";
-                worksheet.Cells[8, 1].Value = "QTY";
-                worksheet.Cells[9, 1].Value = "UOM";
+                worksheet.Cells[2, 1].Value = "Customer/Vendor";
+                worksheet.Cells[3, 1].Value = "Part No";
+                worksheet.Cells[4, 1].Value = "Part Name";
+                worksheet.Cells[5, 1].Value = "Colour";
+                worksheet.Cells[6, 1].Value = "Lot/Batch No";
+                worksheet.Cells[7, 1].Value = "Machine No. / Location";
+                worksheet.Cells[8, 1].Value = "Quantity // Unit";
+                //worksheet.Cells[9, 1].Value = "UOM";
                 worksheet.Cells[10, 1].Value = "CheckIn";
                 worksheet.Cells[11, 1].Value = "CheckOut";
 
                 // Add data rows
                 int column = 2;
-                foreach (var item in items)
+                if(amount == 0)
                 {
+                    foreach (var item in items)
+                    {
 
-                    worksheet.Cells[1, column].Value = item.id;
-                    worksheet.Cells[2, column].Value = item.remark2;
-                    worksheet.Cells[3, column].Value = item.itemcode;
-                    worksheet.Cells[4, column].Value = item.description;
-                    worksheet.Cells[5, column].Value = item.description2;
-                    worksheet.Cells[6, column].Value = item.batch;
-                    worksheet.Cells[7, column].Value = item.location;
-                    worksheet.Cells[8, column].Value = item.qtyremain + "/" + item.qty;
-                    worksheet.Cells[9, column].Value = item.uom;
-                    worksheet.Cells[10, column].Value = item.checkin;
-                    worksheet.Cells[11, column].Value = item.checkout;
+                        worksheet.Cells[1, column].Value = item.id;
+                        worksheet.Cells[2, column].Value = item.remark2;
+                        worksheet.Cells[3, column].Value = item.itemcode;
+                        worksheet.Cells[4, column].Value = item.description;
+                        worksheet.Cells[5, column].Value = item.description2;
+                        worksheet.Cells[6, column].Value = item.batch;
+                        worksheet.Cells[7, column].Value = item.location;
+                        worksheet.Cells[8, column].Value = item.qty + "/" + item.qty + item.uom;
+                        //worksheet.Cells[9, column].Value = item.uom;
+                        worksheet.Cells[10, column].Value = item.checkin;
+                        worksheet.Cells[11, column].Value = item.checkout;
+                    }
                 }
+                else
+                {
+                    foreach (var item in items)
+                    {
+
+                        worksheet.Cells[1, column].Value = item.id;
+                        worksheet.Cells[2, column].Value = item.remark2;
+                        worksheet.Cells[3, column].Value = item.itemcode;
+                        worksheet.Cells[4, column].Value = item.description;
+                        worksheet.Cells[5, column].Value = item.description2;
+                        worksheet.Cells[6, column].Value = item.batch;
+                        worksheet.Cells[7, column].Value = item.location;
+                        worksheet.Cells[8, column].Value = amount + "/" + item.qty + item.uom;
+                        //worksheet.Cells[9, column].Value = item.uom;
+                        worksheet.Cells[10, column].Value = item.checkin;
+                        worksheet.Cells[11, column].Value = item.checkout;
+                    }
+                }
+
+                
 
                 // Fit columns
                 worksheet.Column(1).AutoFit();
@@ -161,12 +207,16 @@ namespace Polynic.Controllers
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     return File(memoryStream.ToArray(), contentType, fileName);
                 }
+
+               
             }
 
             
         }
 
-        [HttpPut("item/{Id}/checkin")]
+
+
+        [HttpPut("checkin/id/{Id}")]
         public async Task<IActionResult> CheckIn([FromRoute] int Id)
         {
             if (Id == 0)

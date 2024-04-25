@@ -15,7 +15,7 @@ namespace Polynic.Models
         public decimal qty { get; set; }
         public string? uom { get; set; }
         public int id { get; set; }
-        public DateTimeOffset checkout { get; set; }
+        public DateTimeOffset? checkout { get; set; }
         public DateTimeOffset? checkin { get; set; }
         public int qtyremain { get; set; }
 

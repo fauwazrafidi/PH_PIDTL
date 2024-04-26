@@ -14,10 +14,11 @@
     <button @onclick="Search">Search</button>
 </div>
 
-<table class="table">
-    <thead>
+<table class="table table-bordered border-dark table-hover mt-3">
+    <thead style="background-color: #ADD8E6">
         <tr>
             @* <th>Id</th> *@
+            <th>Customer/Vendor</th>
             <th>Part No</th>
             <th>Part Name</th>
             <th>Colour</th>
@@ -25,8 +26,7 @@
             <th>Machine No./Location</th>
             <th>Quantity//Unit</th>
             @* <th>Uom</th> *@
-            <th>Customer/Vendor</th>
-            <th>Checkout</th>
+@*             <th>Checkout</th> *@
             <th>Checkin</th>
             <th></th>
             @* <th>QtyRemain</th> *@
@@ -43,6 +43,7 @@
             {
                 <tr>
                     @* <td>@item.id</td> *@
+                    <td>@item.remark2</td>
                     <td>@item.itemcode</td>
                     <td>@item.description</td>
                     <td>@item.description2</td>
@@ -50,8 +51,7 @@
                     <td>@item.location</td>
                     <td>@item.qty @item.uom</td>
                     @* <td>@item.uom</td> *@
-                    <td>@item.remark2</td>
-                    <td>@item.checkout?.ToString("yyyy-MM-dd HH:mm")</td>
+@*                     <td>@item.checkout?.ToString("yyyy-MM-dd HH:mm")</td> *@
                     <td>@item.checkin?.ToString("yyyy-MM-dd HH:mm")</td>
                     <td>
                         <button class="btn btn-primary" @onclick="(async () => { await ExportItem(item.id); })">Export</button>

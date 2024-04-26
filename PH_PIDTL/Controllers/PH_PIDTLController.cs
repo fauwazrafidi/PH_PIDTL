@@ -3,8 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OfficeOpenXml;
+using OfficeOpenXml.Drawing;
 using OfficeOpenXml.Style;
 using Polynic.Data;
+using QRCoder;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 
 namespace Polynic.Controllers
@@ -15,6 +19,7 @@ namespace Polynic.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<PH_PIDTLController> _logger;
+        private Bitmap qrCodeImage;
 
         public PH_PIDTLController(ApplicationDbContext context, ILogger<PH_PIDTLController> logger)
         {
@@ -140,64 +145,74 @@ namespace Polynic.Controllers
                 var worksheet = package.Workbook.Worksheets.Add("PH_PIDTL Data");
 
                 // Add header column
-                worksheet.Cells[1, 1].Value = "Customer/Vendor";
-                worksheet.Cells[2, 1].Value = "Part No";
-                worksheet.Cells[3, 1].Value = "Part Name";
-                worksheet.Cells[4, 1].Value = "Colour";
-                worksheet.Cells[5, 1].Value = "Lot/Batch No";
-                worksheet.Cells[6, 1].Value = "Machine No. / Location";
-                worksheet.Cells[7, 1].Value = "Quantity // Unit";
-                worksheet.Cells[8, 1].Value = "Date Received";
-                worksheet.Cells[9, 1].Value = "CheckOut";
+                worksheet.Cells["A1"].Value = "Date Received";
+                worksheet.Cells["A2"].Value = "Customer/Vendor";
+                worksheet.Cells["A3"].Value = "Part No";
+                worksheet.Cells["A4"].Value = "Part Name";
+                worksheet.Cells["A5"].Value = "Colour";
+                worksheet.Cells["A6"].Value = "Lot/Batch No";
+                worksheet.Cells["A7"].Value = "Machine No. / Location";
+                worksheet.Cells["A8"].Value = "Quantity // Unit";
+                worksheet.Cells["A9"].Value = "Remark";
 
-                int column = 2;
+                worksheet.Cells["B1"].Value = ":";
+                worksheet.Cells["B2"].Value = ":";
+                worksheet.Cells["B3"].Value = ":";
+                worksheet.Cells["B4"].Value = ":";
+                worksheet.Cells["B5"].Value = ":";
+                worksheet.Cells["B6"].Value = ":";
+                worksheet.Cells["B7"].Value = ":";
+                worksheet.Cells["B8"].Value = ":";
+                worksheet.Cells["B9"].Value = ":";
 
-                worksheet.Cells[1, column].Value = ":";
-                worksheet.Cells[2, column].Value = ":";
-                worksheet.Cells[3, column].Value = ":";
-                worksheet.Cells[4, column].Value = ":";
-                worksheet.Cells[5, column].Value = ":";
-                worksheet.Cells[6, column].Value = ":";
-                worksheet.Cells[7, column].Value = ":";
-                worksheet.Cells[8, column].Value = ":";
-                worksheet.Cells[9, column].Value = ":";
-                
-
+                int itemid = 0;
                 // Add data rows
-                column = 3;
                 if(amount == 0)
                 {
                     foreach (var item in items)
                     {
-                        worksheet.Cells[1, column].Value = item.remark2;
-                        worksheet.Cells[2, column].Value = item.itemcode;
-                        worksheet.Cells[3, column].Value = item.description;
-                        worksheet.Cells[4, column].Value = item.description2;
-                        worksheet.Cells[5, column].Value = item.batch;
-                        worksheet.Cells[6, column].Value = item.location;
-                        worksheet.Cells[7, column].Value = item.qty + "/" + item.qty + item.uom;
-                        worksheet.Cells[8, column].Value = item.checkin;
-                        worksheet.Cells[9, column].Value = item.checkout;
+                        itemid = item.id;
+
+                        worksheet.Cells["C1"].Value = item.checkin?.ToString("yyyy-MM-dd");
+                        worksheet.Cells["C2"].Value = item.remark2;
+                        worksheet.Cells["C3"].Value = item.itemcode;
+                        worksheet.Cells["C4"].Value = item.description;
+                        worksheet.Cells["C5"].Value = item.description2;
+                        worksheet.Cells["C6"].Value = item.batch;
+                        worksheet.Cells["C7"].Value = item.location;
+                        worksheet.Cells["C8"].Value = item.qty + "/" + item.qty + item.uom;
                     }
                 }
                 else
                 {
                     foreach (var item in items)
                     {
+                        itemid = item.id;
 
-                        worksheet.Cells[1, column].Value = item.remark2;
-                        worksheet.Cells[2, column].Value = item.itemcode;
-                        worksheet.Cells[3, column].Value = item.description;
-                        worksheet.Cells[4, column].Value = item.description2;
-                        worksheet.Cells[5, column].Value = item.batch;
-                        worksheet.Cells[6, column].Value = item.location;
-                        worksheet.Cells[7, column].Value = amount + "/" + item.qty + item.uom;
-                        worksheet.Cells[8, column].Value = item.checkin;
-                        worksheet.Cells[9, column].Value = item.checkout;
+                        worksheet.Cells["C1"].Value = item.checkin?.ToString("yyyy-MM-dd");
+                        worksheet.Cells["C2"].Value = item.remark2;
+                        worksheet.Cells["C3"].Value = item.itemcode;
+                        worksheet.Cells["C4"].Value = item.description;
+                        worksheet.Cells["C5"].Value = item.description2;
+                        worksheet.Cells["C6"].Value = item.batch;
+                        worksheet.Cells["C7"].Value = item.location;
+                        worksheet.Cells["C8"].Value = amount + "/" + item.qty + item.uom;
                     }
                 }
 
-                
+                var link = $"http://localhost:5198/api/PH_PIDTL/checkout/id/{itemid}?Id={itemid}&checkoutQty={amount}";
+                var qrCodeImage = GenerateQRCode(link);
+
+                // Convert the QR code image to byte array
+                byte[] qrCodeBytes = ConvertImageToByteArray(qrCodeImage);
+
+                // Insert QR code image into cell F9
+                var qrCodeImageStream = new MemoryStream(qrCodeBytes);
+                var qrCodeImageExcel = worksheet.Drawings.AddPicture($"QRCode_{itemid}", qrCodeImageStream);
+                qrCodeImageExcel.From.Column = 3; // Column C
+                qrCodeImageExcel.From.Row = 8;    // Row 10
+                qrCodeImageExcel.SetSize(50, 50); // Adjust size as needed
+                qrCodeImageExcel.EditAs = eEditAs.OneCell; // 
 
                 // Fit columns
                 worksheet.Column(1).AutoFit();
@@ -247,7 +262,7 @@ namespace Polynic.Controllers
                 return BadRequest("Item has already been checked in.");
             }
 
-            item.checkin = DateTimeOffset.UtcNow.AddHours(8); // Update checkin time
+            item.checkin = DateTimeOffset.UtcNow; // Update checkin time
 
             try
             {
@@ -324,7 +339,27 @@ namespace Polynic.Controllers
             return !items.Any(i => i.id != itemId && i.checkin < checkin);
         }
 
+        private Image GenerateQRCode(string link, int width = 200, int height = 150)
+        {
+            QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(link, QRCodeGenerator.ECCLevel.Q);
+            QRCode qrCode = new QRCode(qrCodeData);
+            Bitmap qrCodeImage = qrCode.GetGraphic(20);
+            // Convert the QR code to a bitmap
 
+            // Save the QR code image to a file
+            string filePath = "qrcode.png";
+            qrCodeImage.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            return qrCodeImage;
+        }
 
+        private byte[] ConvertImageToByteArray(Image image)
+        {
+            using (var stream = new MemoryStream())
+            {
+                image.Save(stream, ImageFormat.Png);
+                return stream.ToArray();
+            }
+        }
     }
 }
